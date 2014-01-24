@@ -358,10 +358,11 @@ title: Ember.run stuff
 
 plus more in <a href='http://emberjs.com/api/classes/Ember.run.html'>Ember docs</a>
 
+
 ---
 
 title: Other Resources
 
-- <a href='http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work#answer-14296339'>matchy SO post</a>
+- <a href='http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work#answer-14296339'>machty SO post</a>
 - <a href='https://code.stypi.com/stefanpenner/se%C3%B1or%20runloop'>Steffan Penner - señor runloop</a>
 - <a href='http://emberjs.com/api/classes/Ember.run.html'>Ember.run Docs</a>
