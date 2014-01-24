@@ -1,0 +1,556 @@
+<!--
+Google IO 2012 HTML5 Slide Template
+
+Authors: Eric Bidelman <ebidel@gmail.com>
+         Luke Mahe <lukem@google.com>
+
+URL: https://code.google.com/p/io-2012-slides
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ember Meetup</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">-->
+  <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+  <!--This one seems to work all the time, but really small on ipad-->
+  <!--<meta name="viewport" content="initial-scale=0.4">-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" media="all" href="theme/css/default.css">
+  <link rel="stylesheet" media="all" href="theme/css/app.css">
+  <link rel="stylesheet" media="only screen and (max-device-width: 480px)" href="theme/css/phone.css">
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->
+  <script data-main="js/slides" src="js/require-1.0.8.min.js"></script>
+</head>
+<body style="opacity: 0">
+
+<slides class="layout-widescreen">
+
+<!-- <slide class="logoslide nobackground">
+  <article class="flexbox vcenter">
+    <span><img src="images/ember_logo.png"></span>
+  </article>
+</slide>
+ -->
+<slide class="title-slide segue nobackground">
+  <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+  <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
+  <hgroup class="auto-fadein">
+    <h1 data-config-title><!-- populated from slide_config.json --></h1>
+    <h2 data-config-subtitle><!-- populated from slide_config.json --></h2>
+    <p data-config-presenter><!-- populated from slide_config.json --></p>
+  </hgroup>
+</slide>
+
+
+<slide class="big" >
+  
+    <hgroup>
+      <h2>Overview</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p>Topics:</p>
+<ul>
+<li>what a Run Loop is?</li>
+<li>Why a Run Loop</li>
+<li>Run Loop Queues in Ember</li>
+<li>autoRun</li>
+<li>autoRun and Testing</li>
+<li>Other methods of Ember.run</li>
+</ul></article>
+ 
+</slide>
+
+<slide class="segue dark nobackground" >
+  
+    <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>what a Run Loop is?</h2>
+      <h3></h3>
+    </hgroup>
+  
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>what?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p>... not a <code>loop</code> like programmers might think</p>
+<pre class='prettyprint' data-lang='javascript'>
+for (i = 0; i < length; i++) {
+  // some stuff here
+}
+</pre>
+
+<p>It is an 'aggregate changes over time' mechanism.</p></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>what?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p><q>..used to batch, and order (or reorder) work in a way that is most ... efficient ... by scheduling work on specific queues. These queues have a priority,
+and are processed to completion in priority order.</q></p>
+<footer class='source'><a href='https://code.stypi.com/stefanpenner/se%C3%B1or%20runloop'>Steffan Penner</a></footer></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>what?</h2>
+      <h3>Queues of work to be done</h3>
+    </hgroup>
+    <article ><p><img alt="Queues are like buckets" src="images/bucket.png" />
+<img alt="Queues are like buckets" src="images/bucket.png" />
+<img alt="Queues are like buckets" src="images/bucket.png" />
+<img alt="Queues are like buckets" src="images/bucket.png" />
+<img alt="Queues are like buckets" src="images/bucket.png" />
+<img alt="Queues are like buckets" src="images/bucket.png" /></p>
+<p>Queues are run in order of priority</p></article>
+ 
+</slide>
+
+<slide class="segue dark nobackground" >
+  
+    <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>Why a Run Loop?</h2>
+      <h3></h3>
+    </hgroup>
+  
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3></h3>
+    </hgroup>
+    <article class="flexbox hcenter vcenter"><p>Some things 'cost' more than others</p>
+<ul>
+<li>DOM manipulation</li>
+<li>layout calculations</li>
+<li>your cool, but expensive algorithm</li>
+</ul></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p>Ineffective use of DOM calculations / layout
+<pre class='prettyprint' data-lang='javascript'></p>
+<p>// assuming divs foo, bar, baz
+foo.style.height = "500px";
+foo.offsetHeight;</p>
+<p>bar.style.height = "400px";
+foo.offsetHeight;</p>
+<p>baz.style.height = "200px";
+foo.offsetHeight;
+</pre></p>
+<footer class='source white'><a href=''>Steffan Penner</a></footer></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p>Ineffective use of DOM calculations / layout
+<pre class='prettyprint' data-lang='javascript'></p>
+<p>// assuming divs foo, bar, baz
+foo.style.height = "500px"; // write
+foo.offsetHeight; // read (recalculate style, layout)</p>
+<p>bar.style.height = "400px"; // write
+foo.offsetHeight; // read (recalculate style, layout)</p>
+<p>baz.style.height = "200px"; // write
+foo.offsetHeight; // read (recalculate style, layout)
+</pre></p></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p>Grouping writes before reads helps</p>
+<pre class='prettyprint' data-lang='javascript'>
+
+// assuming divs foo, bar, baz
+foo.style.height = "500px"; // write
+bar.style.height = "400px"; // write
+baz.style.height = "200px"; // write
+
+foo.offsetHeight; // read (recalculate style, layout)
+<b>bar.offsetHeight; // read (style and layout is already known)</b>
+<b>baz.offsetHeight; // read (style and layout is already known)</b>
+
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+var Meetup = Ember.Object.extend({
+  title: 'Ember.js',
+  location: 'SLC',
+  food: 'pizza',
+  prettyTitle: function() {
+    return this.get('title') + ' - ' + this.get('location');
+  }.property('title', 'location');
+});
+</pre>
+
+<pre class='prettyprint' data-lang='handlebars'>
+  {{location}}
+  {{prettyTitle}}
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+var Meetup = Ember.Object.extend({
+  title: 'Ember.js',
+  location: 'SLC',
+  food: 'pizza',
+  prettyTitle: function() {
+    return this.get('title') + ' - ' + this.get('location');
+  }.property('title', 'location');
+});
+</pre>
+
+<pre class='prettyprint' data-lang='javascript'>
+  var meetup = Meetup.create();
+  meetup.set('location', 'PDX');
+  meetup.set('title', 'Emberenos');
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3>without the run loop</h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+  var meetup = Meetup.create();
+  meetup.set('location', 'PDX'); // {{location}} and {{prettyTitle}} updated
+  meetup.set('title', 'Emberenos'); // {{title}} and {{prettyTitle}} updated
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3>with the run loop</h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+  var meetup = Meetup.create();
+  meetup.set('location', 'PDX');
+  meetup.set('title', 'Emberenos');
+  // {{location}}, {{title}} and {{prettyTitle}} updated
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>why?</h2>
+      <h3>aggregate = net zero change</h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+  var meetup = Meetup.create();
+  meetup.set('location', 'PDX');
+  meetup.set('title', 'Emberenos');
+
+  meetup.set('location', 'SLC');
+  meetup.set('title', 'Ember.js');
+
+  // no DOM update
+</pre></article>
+ 
+</slide>
+
+<slide class="segue dark nobackground" >
+  
+    <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>Run Loop Queues in Ember</h2>
+      <h3></h3>
+    </hgroup>
+  
+</slide>
+
+<slide class="big" >
+  
+    <hgroup>
+      <h2>queues</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+  Ember.run.queues
+</pre>
+
+<ul class="build">
+<li><code>sync</code>: synchonization jobs, propagate bound data</li>
+<li><code>actions</code>: general work queue, scheduled tasks, promises, etc</li>
+<li><code>routerTransitions</code>: routing transition jobs</li>
+<li><code>render</code>: jobs meant for rendering, typically will update the DOM</li>
+<li><code>afterRender</code>: after the render is complete</li>
+<li><code>destroy</code>: jobs to finish tear-down objects other jobs have destroyed</li>
+</ul></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>psuedo algorithm</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p><img alt="Queues are like buckets" src="images/sync_bucket.png" />
+<img alt="Queues are like buckets" src="images/actions_bucket.png" />
+<img alt="Queues are like buckets" src="images/rtrans_bucket.png" />
+<img alt="Queues are like buckets" src="images/render_bucket.png" />
+<img alt="Queues are like buckets" src="images/arender_bucket.png" />
+<img alt="Queues are like buckets" src="images/destroy_bucket.png" /></p></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>psuedo algorithm</h2>
+      <h3>how the run loop processes jobs</h3>
+    </hgroup>
+    <article ><ul class="build">
+<li>if no queues with jobs, return -- done</li>
+<li>first <code>QUEUE</code> with pending jobs = <code>CURRENT_QUEUE</code></li>
+<li>build temp <code>WORK_QUEUE</code></li>
+<li>pull <code>CURRENT_QUEUE</code> into <code>WORK_QUEUE</code></li>
+<li>process jobs one at a time in <code>WORK_QUEUE</code></li>
+<li>repeat</li>
+</ul></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>psuedo algorithm</h2>
+      <h3>how the run loop processes jobs</h3>
+    </hgroup>
+    <article ><p><img alt="Queues are like buckets" src="images/sync_bucket.png" />
+<img alt="Queues are like buckets" src="images/actions_bucket.png" />
+<img alt="Queues are like buckets" src="images/rtrans_bucket.png" />
+<img alt="Queues are like buckets" src="images/render_bucket.png" />
+<img alt="Queues are like buckets" src="images/arender_bucket.png" />
+<img alt="Queues are like buckets" src="images/destroy_bucket.png" /></p></article>
+ 
+</slide>
+
+<slide class="segue dark nobackground" >
+  
+    <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>autoRun</h2>
+      <h3></h3>
+    </hgroup>
+  
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>autoRun</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><p>In development and production Ember will automatically wrap code it finds in an <code>autoRun</code> when appropriate</p>
+<pre class='prettyprint' data-lang='javascript'>
+  doSomething: function() {
+    this.set('propA', 3);
+    this.set('propB', 4);
+  }
+</pre>
+
+<pre class='prettyprint' data-lang='javascript'>
+  doSomething: function() {
+    Ember.run.begin();
+    this.set('propA', 3);
+    this.set('propB', 4);
+    nextTick(function(){
+      Ember.run.end();
+    });
+  }
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>autoRun</h2>
+      <h3>wrap your async</h3>
+    </hgroup>
+    <article ><pre class='prettyprint' data-lang='javascript'>
+  doSomething: function() {
+    Ember.run(function() {
+      this.set('propA', 3);
+      this.set('propB', 4);
+    });
+  }
+</pre></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>potential situations to consider</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><ul>
+<li>$.ajax callbacks</li>
+<li>animation complete handler</li>
+<li>setTimeout</li>
+<li>setInterval</li>
+<li>postMessage</li>
+<li>MessageChannel</li>
+<li>jQuery event handling</li>
+<li>websocket</li>
+</ul>
+<p>Generally anything async that you write should consider the run loop.</p></article>
+ 
+</slide>
+
+<slide class="segue dark nobackground" >
+  
+    <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>autoRun and Testing</h2>
+      <h3></h3>
+    </hgroup>
+  
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>autoRun and Testing</h2>
+      <h3></h3>
+    </hgroup>
+    <article class="flexbox vcenter hcenter"><p>Ember testing mode disables <code>autoRun</code></p>
+<p>Can cause testing issues if you are unaware of <code>autoRun</code></p></article>
+ 
+</slide>
+
+<slide class="segue dark nobackground" >
+  
+    <aside class="gdbar"><img src="images/ember_icon_128.png"></aside>
+    <hgroup class="auto-fadein">
+      <h2>Other `Ember.run` methods</h2>
+      <h3></h3>
+    </hgroup>
+  
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>Ember.run stuff</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><ul>
+<li><code>Ember.run.join</code></li>
+<li><code>Ember.run.later</code> &lt;- use instead of <code>setTimeout</code></li>
+<li><code>Ember.run.next</code> &lt;- next tick, consider <code>schedule</code></li>
+<li><code>Ember.run.schedule</code> &lt;- push to queue</li>
+<li><code>Ember.run.throttle</code></li>
+</ul>
+<p>plus more in <a href='http://emberjs.com/api/classes/Ember.run.html'>Ember docs</a></p></article>
+ 
+</slide>
+
+<slide  >
+  
+    <hgroup>
+      <h2>Other Resources</h2>
+      <h3></h3>
+    </hgroup>
+    <article ><ul>
+<li><a href='http://stackoverflow.com/questions/13597869/what-is-ember-runloop-and-how-does-it-work#answer-14296339'>matchy SO post</a></li>
+<li><a href='https://code.stypi.com/stefanpenner/se%C3%B1or%20runloop'>Steffan Penner - señor runloop</a></li>
+<li><a href='http://emberjs.com/api/classes/Ember.run.html'>Ember.run Docs</a></li>
+</ul></article>
+ 
+</slide>
+
+
+<slide class="thank-you-slide segue nobackground">
+  <aside class="gdbar right"><img src="images/ember_icon_128.png"></aside>
+  <article class="flexbox vleft auto-fadein">
+    <h2>&lt;/presentation&gt;</h2>
+    <p>thanks!</p>
+  </article>
+  <p class="auto-fadein" data-config-contact>
+    <!-- populated from slide_config.json -->
+  </p>
+</slide>
+
+<!-- <slide class="logoslide dark nobackground">
+  <article class="flexbox vcenter">
+    <span><img src="images/ember_logo_white.png"></span>
+  </article>
+</slide> -->
+
+<slide class="backdrop"></slide>
+
+</slides>
+
+<script>
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-XXXXXXXX-1']);
+_gaq.push(['_trackPageview']);
+
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>
+
+<!--[if IE]>
+  <script src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+  <script>CFInstall.check({mode: 'overlay'});</script>
+<![endif]-->
+</body>
+</html>
